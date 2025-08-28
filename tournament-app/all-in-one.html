@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tournament App - All-in-One</title>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+	<!-- Firebase SDK -->
+	<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+	<style>
+		/* Base + Shared Theme (subset of user/admin styles) */
+		:root {
+			--primary-color: #ff6b35; --secondary-color: #f7931e; --accent-color: #ffd700;
+			--background-dark: #0a0a0a; --background-light: #1a1a1a;
+			--surface-dark: #2a2a2a; --surface-light: #3a3a3a;
+			--text-primary: #ffffff; --text-secondary: #b0b0b0; --text-muted: #808080;
+			--success-color: #4caf50; --error-color: #f44336; --warning-color: #ff9800; --info-color: #2196f3;
+			--border-color: #404040; --shadow-color: rgba(0,0,0,0.5);
+			--gradient-primary: linear-gradient(135deg,#ff6b35 0%,#f7931e 100%);
+			--gradient-secondary: linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 100%);
+			--gradient-card: linear-gradient(135deg,#2a2a2a 0%,#3a3a3a 100%);
+			--admin-gradient: linear-gradient(135deg,#2c3e50 0%,#34495e 100%);
+		}
+		*{margin:0;padding:0;box-sizing:border-box}
+		body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--background-dark);color:var(--text-primary);line-height:1.6;}
+		.hidden{display:none!important}
+		.container{min-height:100vh;display:flex;flex-direction:column}
+		.header,.navbar{background:var(--gradient-secondary);backdrop-filter:blur(10px);border-bottom:1px solid var(--border-color);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+		.header .logo,.nav-brand{display:flex;align-items:center;gap:.5rem;font-size:1.5rem;font-weight:700;color:var(--primary-color)}
+		.language-selector select{background:var(--surface-dark);color:var(--text-primary);border:1px solid var(--border-color);padding:.5rem;border-radius:8px;cursor:pointer}
+		.main{flex:1;padding:2rem;max-width:1200px;margin:0 auto}
+		.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:1rem 1.5rem;border:none;border-radius:12px;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none;color:#fff}
+		.btn-primary{background:var(--gradient-primary);box-shadow:0 4px 15px rgba(255,107,53,.3)}
+		.btn-secondary{background:var(--surface-dark);border:2px solid var(--border-color);color:var(--text-primary)}
+		.btn-danger{background:var(--error-color)}
+		.btn-success{background:var(--success-color)}
+		.card{background:var(--gradient-card);border:1px solid var(--border-color);border-radius:16px;padding:1.5rem;box-shadow:0 10px 30px var(--shadow-color)}
+		.grid{display:grid;gap:1.5rem}
+		.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+		.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+		.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+		@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+		/* Landing */
+		.landing{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);text-align:center;padding:2rem}
+		.landing h1{font-size:2.5rem;margin-bottom:.5rem;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+		.landing p{color:var(--text-secondary);margin-bottom:2rem}
+		.landing .actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+		/* Auth cards */
+		.auth-wrap{max-width:420px;margin:0 auto}
+		.form-group{margin-bottom:1rem}
+		.input{width:100%;padding:1rem;background:var(--surface-dark);border:2px solid var(--border-color);border-radius:12px;color:var(--text-primary)}
+		.label{display:block;margin-bottom:.4rem;color:var(--text-secondary);font-size:.95rem}
+		/* Navbar */
+		.navbar .nav-menu{display:flex;gap:1rem}
+		.navbar .nav-link{color:var(--text-secondary);text-decoration:none;padding:.5rem 1rem;border-radius:8px}
+		.navbar .nav-link.active,.navbar .nav-link:hover{background:var(--surface-dark);color:var(--primary-color)}
+		/* Wallet + tournament cards */
+		.wallet-card{display:flex;align-items:center;gap:1rem}
+		.wallet-amount{font-size:1.4rem;font-weight:700}
+		.badge{display:inline-block;padding:.25rem .6rem;border-radius:10px;background:var(--surface-dark);border:1px solid var(--border-color);color:#fff;font-size:.8rem}
+		.table{width:100%;border-collapse:collapse}
+		.table th,.table td{padding:.75rem;border-bottom:1px solid var(--border-color);text-align:left;color:var(--text-secondary)}
+		.section{display:none}
+		.section.active{display:block}
+		.footer{text-align:center;padding:1rem;color:var(--text-secondary);border-top:1px solid var(--border-color);background:var(--gradient-secondary)}
+		.toast-container{position:fixed;top:20px;right:20px;z-index:3000}
+		.toast{background:var(--gradient-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem 1.2rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.6rem;box-shadow:0 10px 30px var(--shadow-color)}
+		.loading{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:4000}
+		.spinner{width:46px;height:46px;border:4px solid var(--surface-dark);border-top:4px solid var(--primary-color);border-radius:50%;animation:spin 1s linear infinite}
+		@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+	</style>
+</head>
+<body>
+	<!-- Header shared -->
+	<header class="header">
+		<div class="logo">
+			<i class="fas fa-gamepad"></i>
+			<span id="app-name">Tournament App</span>
+		</div>
+		<div class="language-selector">
+			<select id="language-select">
+				<option value="en">English</option>
+				<option value="np">नेपाली</option>
+			</select>
+		</div>
+	</header>
+
+	<main class="main">
+		<!-- Landing -->
+		<section id="landing" class="landing section active">
+			<h1>Welcome to Tournament App</h1>
+			<p>All-in-one file containing User and Admin panels.</p>
+			<div class="actions">
+				<a class="btn btn-primary" id="go-user">Open User Panel</a>
+				<a class="btn btn-secondary" id="go-admin">Open Admin Panel</a>
+			</div>
+		</section>
+
+		<!-- USER: Login -->
+		<section id="user-login" class="section">
+			<div class="auth-wrap">
+				<div class="card">
+					<h2 style="margin-bottom:1rem">User Login</h2>
+					<form id="login-form">
+						<div class="form-group">
+							<label class="label" for="email">Email</label>
+							<input class="input" id="email" type="email" required />
+						</div>
+						<div class="form-group">
+							<label class="label" for="password">Password</label>
+							<input class="input" id="password" type="password" required />
+						</div>
+						<button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+					</form>
+					<hr style="border-color:var(--border-color);margin:1rem 0"/>
+					<h3 style="margin-bottom:.5rem">Create Account</h3>
+					<form id="signup-form">
+						<div class="form-group">
+							<label class="label" for="username">Username</label>
+							<input class="input" id="username" required />
+						</div>
+						<div class="form-group">
+							<label class="label" for="signup-email">Email</label>
+							<input class="input" id="signup-email" type="email" required />
+						</div>
+						<div class="form-group">
+							<label class="label" for="signup-password">Password</label>
+							<input class="input" id="signup-password" type="password" required />
+						</div>
+						<div class="form-group">
+							<label class="label" for="confirm-password">Confirm Password</label>
+							<input class="input" id="confirm-password" type="password" required />
+						</div>
+						<div class="form-group">
+							<label class="label" for="referral-code">Referral Code (Optional)</label>
+							<input class="input" id="referral-code" />
+						</div>
+						<button type="submit" class="btn btn-secondary" style="width:100%">Sign Up</button>
+					</form>
+					<div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:space-between">
+						<a class="btn btn-secondary" id="back-from-user-login">Back</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- USER: Dashboard -->
+		<section id="user-dashboard" class="section">
+			<nav class="navbar">
+				<div class="nav-brand"><i class="fas fa-gamepad"></i><span id="ud-app-name">Tournament App</span></div>
+				<div class="nav-menu">
+					<a href="#" class="nav-link active" data-section="ud-home">Home</a>
+					<a href="#" class="nav-link" data-section="ud-my-contests">My Contests</a>
+					<a href="#" class="nav-link" data-section="ud-wallet">Wallet</a>
+					<a href="#" class="nav-link" data-section="ud-profile">Profile</a>
+				</div>
+				<div class="nav-actions">
+					<button id="logout-btn" class="btn btn-danger" style="padding:.5rem 1rem">Logout</button>
+				</div>
+			</nav>
+			<div id="ud-home" class="card section active" style="margin-top:1rem">
+				<h2>Welcome, <span id="user-name">Player</span></h2>
+				<p style="color:var(--text-secondary)">Ready to dominate today's tournaments?</p>
+				<div class="grid grid-3" style="margin-top:1rem">
+					<div class="card wallet-card"><i class="fas fa-coins"></i><div><div style="color:var(--text-secondary);font-size:.9rem">Deposit</div><div class="wallet-amount" id="deposit-amount">₹0</div></div></div>
+					<div class="card wallet-card"><i class="fas fa-trophy"></i><div><div style="color:var(--text-secondary);font-size:.9rem">Winning</div><div class="wallet-amount" id="winning-amount">₹0</div></div></div>
+					<div class="card wallet-card"><i class="fas fa-gift"></i><div><div style="color:var(--text-secondary);font-size:.9rem">Bonus</div><div class="wallet-amount" id="bonus-amount">₹0</div></div></div>
+				</div>
+				<h3 style="margin:1rem 0 .5rem">Active/Upcoming Tournaments</h3>
+				<div id="tournaments-grid" class="grid grid-3"></div>
+				<div id="no-tournaments" class="card hidden" style="margin-top:1rem;text-align:center">
+					<i class="fas fa-calendar-times"></i>
+					<p>No tournaments available. Check back later!</p>
+				</div>
+			</div>
+			<div id="ud-my-contests" class="card section" style="margin-top:1rem">
+				<h2>My Contests</h2>
+				<div id="my-contests-list"></div>
+			</div>
+			<div id="ud-wallet" class="card section" style="margin-top:1rem">
+				<h2>Wallet</h2>
+				<div>Total Balance: <strong id="total-balance">₹0</strong></div>
+				<h3 style="margin-top:1rem">Transaction History</h3>
+				<table class="table" id="transactions-list"><thead><tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody></tbody></table>
+			</div>
+			<div id="ud-profile" class="card section" style="margin-top:1rem">
+				<h2>Profile</h2>
+				<div style="margin:.5rem 0">Email: <span id="profile-email">-</span></div>
+				<div class="form-group" style="margin-top:1rem">
+					<label class="label">Referral Code</label>
+					<div style="display:flex;gap:.5rem"><input id="referral-code-display" class="input" readonly /><button id="copy-referral" class="btn btn-secondary">Copy</button></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ADMIN: Login -->
+		<section id="admin-login" class="section">
+			<div class="auth-wrap">
+				<div class="card">
+					<h2 style="margin-bottom:1rem"><i class="fas fa-shield-alt"></i> Admin Login</h2>
+					<form id="admin-login-form">
+						<div class="form-group"><label class="label" for="admin-email">Email</label><input class="input" id="admin-email" type="email" required /></div>
+						<div class="form-group"><label class="label" for="admin-password">Password</label><input class="input" id="admin-password" type="password" required /></div>
+						<button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+					</form>
+					<div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:space-between">
+						<a class="btn btn-secondary" id="back-from-admin-login">Back</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ADMIN: Dashboard -->
+		<section id="admin-dashboard" class="section">
+			<nav class="navbar" style="background:var(--admin-gradient)">
+				<div class="nav-brand"><i class="fas fa-shield-alt"></i><span>Admin Panel</span></div>
+				<div class="nav-menu">
+					<a href="#" class="nav-link active" data-section="ad-dashboard">Dashboard</a>
+					<a href="#" class="nav-link" data-section="ad-tournaments">Tournaments</a>
+					<a href="#" class="nav-link" data-section="ad-users">Users</a>
+					<a href="#" class="nav-link" data-section="ad-payments">Payments</a>
+					<a href="#" class="nav-link" data-section="ad-settings">Settings</a>
+				</div>
+				<div class="nav-actions"><button id="admin-logout" class="btn btn-danger" style="padding:.5rem 1rem">Logout</button></div>
+			</nav>
+			<div id="ad-dashboard" class="section active" style="margin-top:1rem">
+				<div class="grid grid-4">
+					<div class="card"><div style="color:var(--text-secondary)">Total Users</div><div class="wallet-amount" id="total-users">0</div></div>
+					<div class="card"><div style="color:var(--text-secondary)">Active Tournaments</div><div class="wallet-amount" id="active-tournaments">0</div></div>
+					<div class="card"><div style="color:var(--text-secondary)">Revenue</div><div class="wallet-amount" id="total-revenue">₹0</div></div>
+					<div class="card"><div style="color:var(--text-secondary)">Pending Withdrawals</div><div class="wallet-amount" id="pending-withdrawals">0</div></div>
+				</div>
+				<div class="card" style="margin-top:1rem"><h3>Recent Activity</h3><div id="activity-list" style="margin-top:.5rem"></div></div>
+			</div>
+			<div id="ad-tournaments" class="section" style="margin-top:1rem">
+				<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+					<h3>Tournament Management</h3>
+					<button id="create-tournament-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Create</button>
+				</div>
+				<table class="table"><thead><tr><th>Name</th><th>Type</th><th>Entry</th><th>Prize</th><th>Players</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tournaments-table-body"></tbody></table>
+			</div>
+			<div id="ad-users" class="section" style="margin-top:1rem">
+				<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+					<h3>Users</h3>
+					<input id="user-search" class="input" placeholder="Search users..." style="max-width:300px"/>
+				</div>
+				<table class="table"><thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody id="users-table-body"></tbody></table>
+			</div>
+			<div id="ad-payments" class="section" style="margin-top:1rem">
+				<h3>Payments</h3>
+				<h4 style="margin-top:1rem">Withdrawals</h4>
+				<table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="withdrawals-table-body"></tbody></table>
+				<h4 style="margin-top:1rem">Deposits</h4>
+				<table class="table"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="deposits-table-body"></tbody></table>
+				<h4 style="margin-top:1rem">Recent Transactions</h4>
+				<table class="table"><thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="transactions-table-body"></tbody></table>
+			</div>
+			<div id="ad-settings" class="section" style="margin-top:1rem">
+				<h3>App Settings</h3>
+				<form id="general-settings-form" class="card" style="margin-top:1rem">
+					<div class="form-group"><label class="label">App Name</label><input id="app-name-input" class="input" placeholder="Tournament App"/></div>
+					<div class="form-group"><label class="label">Maintenance Mode</label><input id="maintenance-mode-toggle" type="checkbox"/></div>
+					<div class="form-group"><label class="label">Enable Deposits</label><input id="deposit-enabled-toggle" type="checkbox" checked /></div>
+					<div class="form-group"><label class="label">Enable Withdrawals</label><input id="withdrawal-enabled-toggle" type="checkbox" checked /></div>
+					<button type="submit" class="btn btn-primary" style="margin-top:.5rem">Save Settings</button>
+				</form>
+				<form id="support-links-form" class="card" style="margin-top:1rem">
+					<div class="form-group"><label class="label">WhatsApp URL</label><input id="whatsapp-url-input" class="input" placeholder="https://wa.me/..."/></div>
+					<div class="form-group"><label class="label">Facebook URL</label><input id="facebook-url-input" class="input" placeholder="https://facebook.com/..."/></div>
+					<div class="form-group"><label class="label">YouTube URL</label><input id="youtube-url-input" class="input" placeholder="https://youtube.com/..."/></div>
+					<button type="submit" class="btn btn-secondary" style="margin-top:.5rem">Save Links</button>
+				</form>
+			</div>
+		</section>
+	</main>
+
+	<footer class="footer">© 2024 Tournament App. All rights reserved.</footer>
+
+	<!-- Loading & Toast -->
+	<div id="loading" class="loading hidden"><div class="spinner"></div></div>
+	<div id="toast-container" class="toast-container"></div>
+
+	<script>
+		// Firebase Config (replace with your own keys)
+		const firebaseConfig = {
+			apiKey: "YOUR_API_KEY",
+			authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+			projectId: "YOUR_PROJECT_ID",
+			storageBucket: "YOUR_PROJECT_ID.appspot.com",
+			messagingSenderId: "YOUR_SENDER_ID",
+			appId: "YOUR_APP_ID"
+		};
+		firebase.initializeApp(firebaseConfig);
+		const auth = firebase.auth();
+		const db = firebase.firestore();
+		const storage = firebase.storage();
+
+		// UI helpers
+		const show = id => document.getElementById(id).classList.remove('hidden');
+		const hide = id => document.getElementById(id).classList.add('hidden');
+		const activate = id => document.getElementById(id).classList.add('active');
+		const deactivate = id => document.getElementById(id).classList.remove('active');
+		const toastC = document.getElementById('toast-container');
+		function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML=`<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':type==='warning'?'exclamation-triangle':'info-circle'}"></i><span>${msg}</span>`;toastC.appendChild(t);setTimeout(()=>t.remove(),4000);}
+		function loading(v){document.getElementById('loading').classList[v?'remove':'add']('hidden');}
+
+		// Navigation between main sections
+		document.getElementById('go-user').onclick = ()=>switchRootSection('user-login');
+		document.getElementById('go-admin').onclick = ()=>switchRootSection('admin-login');
+		document.getElementById('back-from-user-login').onclick = ()=>switchRootSection('landing');
+		document.getElementById('back-from-admin-login').onclick = ()=>switchRootSection('landing');
+		function switchRootSection(id){['landing','user-login','user-dashboard','admin-login','admin-dashboard'].forEach(s=>{deactivate(s);});activate(id);}
+
+		// User dashboard sub-navigation
+		document.querySelectorAll('#user-dashboard .nav-link').forEach(a=>{
+			a.addEventListener('click',e=>{e.preventDefault();const sec=a.getAttribute('data-section');
+				document.querySelectorAll('#user-dashboard .nav-link').forEach(l=>l.classList.remove('active'));a.classList.add('active');
+				['ud-home','ud-my-contests','ud-wallet','ud-profile'].forEach(id=>deactivate(id));activate(sec);
+			});
+		});
+		// Admin dashboard sub-navigation
+		document.querySelectorAll('#admin-dashboard .nav-link').forEach(a=>{
+			a.addEventListener('click',e=>{e.preventDefault();const sec=a.getAttribute('data-section');
+				document.querySelectorAll('#admin-dashboard .nav-link').forEach(l=>l.classList.remove('active'));a.classList.add('active');
+				['ad-dashboard','ad-tournaments','ad-users','ad-payments','ad-settings'].forEach(id=>deactivate(id));activate(sec);
+			});
+		});
+
+		// Auth state
+	
+auth.onAuthStateChanged(async (user)=>{
+		if(user){
+			window.currentUser = user;
+			// If came from user login, show user dashboard; if from admin login, verify admin
+			const locUserLogin = document.getElementById('user-login').classList.contains('active');
+			const locAdminLogin = document.getElementById('admin-login').classList.contains('active');
+			if(locAdminLogin){
+				const isAdmin = await isCurrentUserAdmin(user);
+				if(isAdmin){ switchRootSection('admin-dashboard'); loadAdminData(); }
+				else { await auth.signOut(); toast('Access denied. Admin only.','error'); switchRootSection('landing'); }
+			}else{ switchRootSection('user-dashboard'); loadUserData(); loadTournaments(); }
+		}else{
+			// If on dashboards, push to landing
+			if(document.getElementById('user-dashboard').classList.contains('active')||document.getElementById('admin-dashboard').classList.contains('active')){
+				switchRootSection('landing');
+			}
+		}
+	});
+
+		// User auth handlers
+		document.getElementById('login-form').addEventListener('submit', async (e)=>{
+			e.preventDefault(); const email=document.getElementById('email').value; const password=document.getElementById('password').value;
+			try{ await auth.signInWithEmailAndPassword(email,password); toast('Login successful','success'); }
+			catch(err){ toast(err.message,'error'); }
+		});
+		document.getElementById('signup-form').addEventListener('submit', async (e)=>{
+			e.preventDefault(); const username=document.getElementById('username').value; const email=document.getElementById('signup-email').value; const p=document.getElementById('signup-password').value; const c=document.getElementById('confirm-password').value; const ref=document.getElementById('referral-code').value;
+			if(p!==c){ toast('Passwords do not match','error'); return; }
+			try{
+				const cred = await auth.createUserWithEmailAndPassword(email,p);
+				await cred.user.updateProfile({ displayName: username });
+				await ensureUserDoc(cred.user, ref);
+				toast('Account created','success');
+			}catch(err){ toast(err.message,'error'); }
+		});
+		document.getElementById('logout-btn').addEventListener('click', async ()=>{ await auth.signOut(); toast('Logged out','success'); });
+
+		// Admin auth handlers
+		document.getElementById('admin-login-form').addEventListener('submit', async (e)=>{
+			e.preventDefault(); const email=document.getElementById('admin-email').value; const password=document.getElementById('admin-password').value;
+			try{ await auth.signInWithEmailAndPassword(email,password); toast('Admin login successful','success'); }
+			catch(err){ toast(err.message,'error'); }
+		});
+		document.getElementById('admin-logout').addEventListener('click', async ()=>{ await auth.signOut(); toast('Logged out','success'); });
+
+		// User data + wallet
+		async function ensureUserDoc(user, referralCode){
+			const ref = db.collection('users').doc(user.uid);
+			const snap = await ref.get();
+			if(!snap.exists){
+				await ref.set({ email:user.email, username:user.displayName||user.email.split('@')[0], wallet:{deposit:0,winning:0,bonus:0}, referralCode:genCode(), referredBy: await getReferrer(referralCode), createdAt:new Date(), lastLogin:new Date() });
+			}else{
+				await ref.update({ lastLogin:new Date() });
+			}
+		}
+		async function loadUserData(){
+			if(!window.currentUser) return; const ref=db.collection('users').doc(window.currentUser.uid); const snap=await ref.get(); if(!snap.exists) return;
+			const d=snap.data();
+			document.getElementById('user-name').textContent=d.username||'Player';
+			document.getElementById('profile-email').textContent=d.email||'';
+			document.getElementById('referral-code-display').value=d.referralCode||'';
+			updateWallet(d.wallet||{deposit:0,winning:0,bonus:0});
+		}
+		function updateWallet(w){
+			document.getElementById('deposit-amount').textContent='₹'+(w.deposit||0);
+			document.getElementById('winning-amount').textContent='₹'+(w.winning||0);
+			document.getElementById('bonus-amount').textContent='₹'+(w.bonus||0);
+			document.getElementById('total-balance').textContent='₹'+((w.deposit||0)+(w.winning||0)+(w.bonus||0));
+		}
+		document.getElementById('copy-referral').onclick=()=>{const v=document.getElementById('referral-code-display').value; navigator.clipboard.writeText(v).then(()=>toast('Referral copied','success')).catch(()=>toast('Copy failed','error'))};
+
+		// Tournaments (basic list + join demo)
+		let tournamentsCache=[]; let appSettings=null;
+		async function loadSettings(){ const s=await db.collection('settings').doc('app-settings').get(); if(s.exists) appSettings=s.data(); }
+		async function loadTournaments(){ await loadSettings(); const q=await db.collection('tournaments').where('status','in',['upcoming','ongoing']).orderBy('startTime').get(); tournamentsCache=q.docs.map(d=>({id:d.id,...d.data()})); renderTournaments(); }
+		function renderTournaments(){ const grid=document.getElementById('tournaments-grid'); if(!grid) return; if(!tournamentsCache.length){ document.getElementById('no-tournaments').classList.remove('hidden'); grid.innerHTML=''; return;} document.getElementById('no-tournaments').classList.add('hidden'); grid.innerHTML = tournamentsCache.map(t=>`<div class="card"><div style='display:flex;justify-content:space-between;align-items:center'><strong>${t.name}</strong><span class='badge'>${t.type||''}</span></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.6rem'><div><div style='color:var(--text-secondary);font-size:.85rem'>Entry</div><div>₹${t.entryFee||0}</div></div><div><div style='color:var(--text-secondary);font-size:.85rem'>Prize</div><div>₹${t.prizePool||0}</div></div><div><div style='color:var(--text-secondary);font-size:.85rem'>Players</div><div>${t.currentPlayers||0}/${t.maxPlayers||0}</div></div><div><div style='color:var(--text-secondary);font-size:.85rem'>Status</div><div>${t.status}</div></div></div><div style='display:flex;gap:.5rem;margin-top:.6rem'><button class='btn btn-secondary' onclick="viewTournament('${t.id}')">Details</button><button class='btn btn-primary' onclick="joinTournament('${t.id}')">Join</button></div></div>`).join(''); }
+		window.viewTournament=(id)=>{ const t=tournamentsCache.find(x=>x.id===id); if(!t) return; toast(`${t.name}: Entry ₹${t.entryFee}, Prize ₹${t.prizePool}`,'info'); };
+		window.joinTournament=async (id)=>{ try{ if(!window.currentUser){ toast('Please login first','warning'); return;} const t=tournamentsCache.find(x=>x.id===id); if(!t) return; await deductJoinFee(t); await db.collection('tournaments').doc(id).collection('participants').doc(window.currentUser.uid).set({joinedAt:new Date(),status:'active'}); await db.collection('tournaments').doc(id).update({ currentPlayers: firebase.firestore.FieldValue.increment(1) }); await loadUserData(); toast('Joined successfully','success'); }catch(err){ toast(err.message||'Join failed','error'); } };
+		async function deductJoinFee(t){ const uRef=db.collection('users').doc(window.currentUser.uid); return db.runTransaction(async tr=>{ const u=await tr.get(uRef); if(!u.exists) throw new Error('User not found'); const w=u.data().wallet||{deposit:0,winning:0,bonus:0}; let remain=t.entryFee||0; const pr=(appSettings&&appSettings.defaultJoinFeePriority)||['winning','bonus','deposit']; for(const b of pr){ if(remain>0 && (w[b]||0)>0){ const d=Math.min(remain, w[b]); w[b]-=d; remain-=d; } } if(remain>0) throw new Error('Insufficient balance'); tr.update(uRef,{ wallet:w }); return true; }); }
+
+		// Admin helpers
+		async function isCurrentUserAdmin(user){ try{ const tok=await user.getIdTokenResult(true); if(tok.claims && tok.claims.admin) return true; const s=await db.collection('settings').doc('app-settings').get(); if(s.exists){ const d=s.data(); if(d.adminUids && Array.isArray(d.adminUids) && d.adminUids.includes(user.uid)) return true; } return false; }catch{return false;} }
+		async function loadAdminData(){ await loadDashboardStats(); await loadAdminLists(); }
+		async function loadDashboardStats(){ const usersSnap=await db.collection('users').get(); const actT=await db.collection('tournaments').where('status','in',['upcoming','ongoing']).get(); const pendW=await db.collection('transactions').where('type','==','withdrawal').where('status','==','pending').get(); const joins=await db.collection('transactions').where('type','==','tournament_join').where('status','==','completed').get(); let rev=0; joins.forEach(d=>rev+=d.data().amount||0); document.getElementById('total-users').textContent=usersSnap.size; document.getElementById('active-tournaments').textContent=actT.size; document.getElementById('pending-withdrawals').textContent=pendW.size; document.getElementById('total-revenue').textContent='₹'+rev; const act=await db.collection('transactions').orderBy('timestamp','desc').limit(10).get(); document.getElementById('activity-list').innerHTML=act.docs.map(d=>{const x=d.data();return `<div style='display:flex;gap:.6rem;align-items:center;margin:.35rem 0'><i class="fas fa-${x.type==='deposit'?'plus':x.type==='withdrawal'?'minus':x.type==='tournament_win'?'trophy':'play'}"></i><div><div style='font-weight:600'>${x.type}</div><div style='color:var(--text-secondary);font-size:.9rem'>₹${x.amount||0}</div></div></div>`}).join(''); }
+		async function loadAdminLists(){ const ts=await db.collection('tournaments').orderBy('createdAt','desc').get(); document.getElementById('tournaments-table-body').innerHTML = ts.docs.map(d=>{const t=d.data();return `<tr><td>${t.name}</td><td><span class='badge'>${t.type||''}</span></td><td>₹${t.entryFee||0}</td><td>₹${t.prizePool||0}</td><td>${t.currentPlayers||0}/${t.maxPlayers||0}</td><td><span class='badge'>${t.status||''}</span></td><td><button class='btn btn-secondary' onclick="copyTournament('${d.id}')"><i class='fas fa-copy'></i></button> <button class='btn btn-danger' onclick="deleteTournament('${d.id}')"><i class='fas fa-trash'></i></button></td></tr>`}).join(''); const us=await db.collection('users').orderBy('createdAt','desc').get(); document.getElementById('users-table-body').innerHTML = us.docs.map(u=>{const x=u.data();const bal=(x.wallet?.deposit||0)+(x.wallet?.winning||0)+(x.wallet?.bonus||0);return `<tr><td>${x.username||''}</td><td>${x.email||''}</td><td>₹${bal}</td><td>${fmt(x.createdAt)}</td><td><span class='badge'>Active</span></td><td><button class='btn btn-secondary'><i class='fas fa-eye'></i></button></td></tr>`}).join(''); const ws=await db.collection('transactions').where('type','==','withdrawal').orderBy('timestamp','desc').get(); document.getElementById('withdrawals-table-body').innerHTML = ws.docs.map(w=>{const x=w.data();return `<tr><td>${x.userEmail||'-'}</td><td>₹${x.amount||0}</td><td>${x.method||'-'}</td><td><span class='badge'>${x.status||''}</span></td><td>${fmt(x.timestamp)}</td><td>${x.status==='pending'?`<button class='btn btn-success' onclick="approveWithdrawal('${w.id}')"><i class='fas fa-check'></i></button> <button class='btn btn-danger' onclick="rejectWithdrawal('${w.id}')"><i class='fas fa-times'></i></button>`:''}</td></tr>`}).join(''); const ds=await db.collection('transactions').where('type','==','deposit').orderBy('timestamp','desc').get(); document.getElementById('deposits-table-body').innerHTML = ds.docs.map(w=>{const x=w.data();return `<tr><td>${x.userEmail||'-'}</td><td>₹${x.amount||0}</td><td>${x.method||'-'}</td><td><span class='badge'>${x.status||''}</span></td><td>${fmt(x.timestamp)}</td><td>${x.status==='pending'?`<button class='btn btn-success' onclick="approveDeposit('${w.id}')"><i class='fas fa-check'></i></button> <button class='btn btn-danger' onclick="rejectDeposit('${w.id}')"><i class='fas fa-times'></i></button>`:''}</td></tr>`}).join(''); const tsAll=await db.collection('transactions').orderBy('timestamp','desc').limit(50).get(); document.getElementById('transactions-table-body').innerHTML = tsAll.docs.map(w=>{const x=w.data();return `<tr><td>${x.userEmail||'-'}</td><td><span class='badge'>${x.type||''}</span></td><td>₹${x.amount||0}</td><td><span class='badge'>${x.status||''}</span></td><td>${fmt(x.timestamp)}</td></tr>`}).join(''); }
+		window.copyTournament=async (id)=>{ const d=await db.collection('tournaments').doc(id).get(); if(!d.exists) return; const t=d.data(); const data={...t,name:`${t.name} (Copy)`,startTime:new Date(Date.now()+24*3600*1000),endTime:new Date(Date.now()+25*3600*1000),currentPlayers:0,status:'upcoming',createdAt:new Date(),}; delete data.id; await db.collection('tournaments').add(data); toast('Tournament copied','success'); loadAdminLists(); };
+		window.deleteTournament=async (id)=>{ if(!confirm('Delete this tournament?')) return; await db.collection('tournaments').doc(id).delete(); toast('Tournament deleted','success'); loadAdminLists(); };
+		document.getElementById('create-tournament-btn').onclick=async ()=>{ const name=prompt('Tournament name?'); if(!name) return; const entry=parseInt(prompt('Entry Fee?')||'0',10); const prize=parseInt(prompt('Prize Pool?')||'0',10); const maxp=parseInt(prompt('Max Players?')||'50',10); const type=prompt('Type (Solo/Duo/Squad)?')||'Solo'; await db.collection('tournaments').add({ name, entryFee:entry, prizePool:prize, maxPlayers:maxp, currentPlayers:0, type, status:'upcoming', startTime:new Date(), createdAt:new Date() }); toast('Tournament created','success'); loadAdminLists(); };
+
+		// Payments approve/reject
+		window.approveWithdrawal=async (id)=>{ await db.collection('transactions').doc(id).update({status:'completed',processedAt:new Date()}); toast('Withdrawal approved','success'); loadAdminLists(); loadDashboardStats(); };
+		window.rejectWithdrawal=async (id)=>{ const tx=await db.collection('transactions').doc(id).get(); if(tx.exists){ const x=tx.data(); if(x.userId){ await db.collection('users').doc(x.userId).update({'wallet.winning': firebase.firestore.FieldValue.increment(x.amount||0)}); } } await db.collection('transactions').doc(id).update({status:'rejected',processedAt:new Date()}); toast('Withdrawal rejected & refunded','success'); loadAdminLists(); loadDashboardStats(); };
+		window.approveDeposit=async (id)=>{ const tx=await db.collection('transactions').doc(id).get(); if(tx.exists){ const x=tx.data(); if(x.userId){ await db.collection('users').doc(x.userId).update({'wallet.deposit': firebase.firestore.FieldValue.increment(x.amount||0)}); } } await db.collection('transactions').doc(id).update({status:'completed',processedAt:new Date()}); toast('Deposit approved','success'); loadAdminLists(); loadDashboardStats(); };
+		window.rejectDeposit=async (id)=>{ await db.collection('transactions').doc(id).update({status:'rejected',processedAt:new Date()}); toast('Deposit rejected','success'); loadAdminLists(); loadDashboardStats(); };
+
+		// Settings forms
+		document.getElementById('general-settings-form').addEventListener('submit', async (e)=>{ e.preventDefault(); const data={ appName: document.getElementById('app-name-input').value||'Tournament App', maintenanceMode: document.getElementById('maintenance-mode-toggle').checked, depositEnabled: document.getElementById('deposit-enabled-toggle').checked, withdrawalEnabled: document.getElementById('withdrawal-enabled-toggle').checked }; await db.collection('settings').doc('app-settings').set(data,{merge:true}); document.querySelectorAll('#app-name').forEach?null:(0); document.getElementById('app-name').textContent=data.appName; toast('Settings saved','success'); });
+		document.getElementById('support-links-form').addEventListener('submit', async (e)=>{ e.preventDefault(); const data={ whatsappUrl: document.getElementById('whatsapp-url-input').value||'', facebookUrl: document.getElementById('facebook-url-input').value||'', youtubeUrl: document.getElementById('youtube-url-input').value||'' }; await db.collection('settings').doc('app-settings').set(data,{merge:true}); toast('Support links saved','success'); });
+
+		// Helpers
+		function fmt(ts){ if(!ts) return '-'; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleString(); }
+		function genCode(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
+		async function getReferrer(code){ if(!code) return null; const q=await db.collection('users').where('referralCode','==',code).limit(1).get(); if(q.empty) return null; return q.docs[0].id; }
+	</script>
+</body>
+</html>
