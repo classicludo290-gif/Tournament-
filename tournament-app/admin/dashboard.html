@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Tournament App</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Maintenance Overlay -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+        <div class="maintenance-content">
+            <i class="fas fa-tools"></i>
+            <h2>Admin Panel Under Maintenance</h2>
+            <p>We're currently updating the admin system. Please check back later.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-shield-alt"></i>
+                <span id="app-name">Admin Panel</span>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span id="nav-dashboard">Dashboard</span>
+                </a>
+                <a href="#tournaments" class="nav-link" data-section="tournaments">
+                    <i class="fas fa-trophy"></i>
+                    <span id="nav-tournaments">Tournaments</span>
+                </a>
+                <a href="#users" class="nav-link" data-section="users">
+                    <i class="fas fa-users"></i>
+                    <span id="nav-users">Users</span>
+                </a>
+                <a href="#payments" class="nav-link" data-section="payments">
+                    <i class="fas fa-credit-card"></i>
+                    <span id="nav-payments">Payments</span>
+                </a>
+                <a href="#settings" class="nav-link" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span id="nav-settings">Settings</span>
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                <div class="admin-info">
+                    <span id="admin-name">Admin</span>
+                </div>
+                <div class="language-selector">
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="np">नेपाली</option>
+                    </select>
+                </div>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span id="logout-text">Logout</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="content-section active">
+                <div class="dashboard-header">
+                    <h1 id="welcome-text">Welcome back, <span id="admin-name-display">Admin</span>!</h1>
+                    <p id="dashboard-subtitle">Manage your tournament platform</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-users-label">Total Users</h3>
+                            <p class="stat-value" id="total-users">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="active-tournaments-label">Active Tournaments</h3>
+                            <p class="stat-value" id="active-tournaments">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-revenue-label">Total Revenue</h3>
+                            <p class="stat-value" id="total-revenue">₹0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="pending-withdrawals-label">Pending Withdrawals</h3>
+                            <p class="stat-value" id="pending-withdrawals">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h2 id="quick-actions-title">Quick Actions</h2>
+                    <div class="actions-grid">
+                        <button class="action-btn" onclick="showSection('tournaments')">
+                            <i class="fas fa-plus"></i>
+                            <span id="create-tournament-text">Create Tournament</span>
+                        </button>
+                        <button class="action-btn" onclick="showSection('payments')">
+                            <i class="fas fa-check"></i>
+                            <span id="approve-withdrawals-text">Approve Withdrawals</span>
+                        </button>
+                        <button class="action-btn" onclick="showSection('users')">
+                            <i class="fas fa-user-plus"></i>
+                            <span id="manage-users-text">Manage Users</span>
+                        </button>
+                        <button class="action-btn" onclick="showSection('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span id="app-settings-text">App Settings</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity">
+                    <h2 id="recent-activity-title">Recent Activity</h2>
+                    <div id="activity-list" class="activity-list">
+                        <!-- Activity items will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tournaments Section -->
+            <section id="tournaments-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="tournaments-title">Tournament Management</h2>
+                    <button class="btn btn-primary" onclick="showCreateTournamentModal()">
+                        <i class="fas fa-plus"></i>
+                        <span id="create-tournament-btn-text">Create Tournament</span>
+                    </button>
+                </div>
+
+                <!-- Tournament Filters -->
+                <div class="tournament-filters">
+                    <button class="filter-btn active" data-filter="all" id="filter-all">All</button>
+                    <button class="filter-btn" data-filter="upcoming" id="filter-upcoming">Upcoming</button>
+                    <button class="filter-btn" data-filter="ongoing" id="filter-ongoing">Ongoing</button>
+                    <button class="filter-btn" data-filter="finished" id="filter-finished">Finished</button>
+                    <button class="filter-btn" data-filter="cancelled" id="filter-cancelled">Cancelled</button>
+                </div>
+
+                <!-- Tournaments Table -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th id="tournament-name-header">Name</th>
+                                <th id="tournament-type-header">Type</th>
+                                <th id="tournament-entry-header">Entry Fee</th>
+                                <th id="tournament-prize-header">Prize Pool</th>
+                                <th id="tournament-players-header">Players</th>
+                                <th id="tournament-status-header">Status</th>
+                                <th id="tournament-actions-header">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tournaments-table-body">
+                            <!-- Tournament rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="users-title">User Management</h2>
+                    <div class="search-box">
+                        <input type="text" id="user-search" placeholder="Search users...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th id="user-name-header">Name</th>
+                                <th id="user-email-header">Email</th>
+                                <th id="user-balance-header">Balance</th>
+                                <th id="user-joined-header">Joined</th>
+                                <th id="user-status-header">Status</th>
+                                <th id="user-actions-header">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- User rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Payments Section -->
+            <section id="payments-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="payments-title">Payment Management</h2>
+                    <div class="payment-tabs">
+                        <button class="tab-btn active" data-tab="withdrawals" id="withdrawals-tab">Withdrawals</button>
+                        <button class="tab-btn" data-tab="deposits" id="deposits-tab">Deposits</button>
+                        <button class="tab-btn" data-tab="transactions" id="transactions-tab">All Transactions</button>
+                    </div>
+                </div>
+
+                <!-- Withdrawals Tab -->
+                <div id="withdrawals-tab-content" class="tab-content active">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th id="withdrawal-user-header">User</th>
+                                    <th id="withdrawal-amount-header">Amount</th>
+                                    <th id="withdrawal-method-header">Method</th>
+                                    <th id="withdrawal-status-header">Status</th>
+                                    <th id="withdrawal-date-header">Date</th>
+                                    <th id="withdrawal-actions-header">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawals-table-body">
+                                <!-- Withdrawal rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deposits Tab -->
+                <div id="deposits-tab-content" class="tab-content">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th id="deposit-user-header">User</th>
+                                    <th id="deposit-amount-header">Amount</th>
+                                    <th id="deposit-method-header">Method</th>
+                                    <th id="deposit-status-header">Status</th>
+                                    <th id="deposit-date-header">Date</th>
+                                    <th id="deposit-actions-header">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deposits-table-body">
+                                <!-- Deposit rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div id="transactions-tab-content" class="tab-content">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th id="transaction-user-header">User</th>
+                                    <th id="transaction-type-header">Type</th>
+                                    <th id="transaction-amount-header">Amount</th>
+                                    <th id="transaction-status-header">Status</th>
+                                    <th id="transaction-date-header">Date</th>
+                                    <th id="transaction-details-header">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body">
+                                <!-- Transaction rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="settings-title">App Settings</h2>
+                    <p id="settings-subtitle">Configure your tournament platform</p>
+                </div>
+
+                <div class="settings-container">
+                    <!-- General Settings -->
+                    <div class="settings-card">
+                        <h3 id="general-settings-title">General Settings</h3>
+                        <form id="general-settings-form" class="settings-form">
+                            <div class="form-group">
+                                <label id="app-name-label">App Name</label>
+                                <input type="text" id="app-name-input" placeholder="Tournament App">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="maintenance-mode-label">Maintenance Mode</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="maintenance-mode-toggle">
+                                    <label for="maintenance-mode-toggle"></label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="deposit-enabled-label">Enable Deposits</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="deposit-enabled-toggle">
+                                    <label for="deposit-enabled-toggle"></label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="withdrawal-enabled-label">Enable Withdrawals</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="withdrawal-enabled-toggle">
+                                    <label for="withdrawal-enabled-toggle"></label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span id="save-settings-text">Save Settings</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="settings-card">
+                        <h3 id="payment-methods-title">Payment Methods</h3>
+                        <div class="payment-methods">
+                            <div class="method-item">
+                                <h4 id="deposit-methods-title">Deposit Methods</h4>
+                                <div id="deposit-methods-list" class="methods-list">
+                                    <!-- Deposit methods will be loaded here -->
+                                </div>
+                                <button class="btn btn-secondary" onclick="addPaymentMethod('deposit')">
+                                    <i class="fas fa-plus"></i>
+                                    Add Method
+                                </button>
+                            </div>
+                            
+                            <div class="method-item">
+                                <h4 id="withdrawal-methods-title">Withdrawal Methods</h4>
+                                <div id="withdrawal-methods-list" class="methods-list">
+                                    <!-- Withdrawal methods will be loaded here -->
+                                </div>
+                                <button class="btn btn-secondary" onclick="addPaymentMethod('withdrawal')">
+                                    <i class="fas fa-plus"></i>
+                                    Add Method
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Support Links -->
+                    <div class="settings-card">
+                        <h3 id="support-links-title">Support Links</h3>
+                        <form id="support-links-form" class="settings-form">
+                            <div class="form-group">
+                                <label id="whatsapp-url-label">WhatsApp URL</label>
+                                <input type="url" id="whatsapp-url-input" placeholder="https://wa.me/...">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="facebook-url-label">Facebook URL</label>
+                                <input type="url" id="facebook-url-input" placeholder="https://facebook.com/...">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label id="youtube-url-label">YouTube URL</label>
+                                <input type="url" id="youtube-url-input" placeholder="https://youtube.com/...">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span id="save-links-text">Save Links</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Create Tournament Modal -->
+    <div id="create-tournament-modal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="create-tournament-title">Create Tournament</h2>
+                <button class="modal-close" id="close-create-tournament">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="create-tournament-form" class="tournament-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="tournament-name-label">Tournament Name</label>
+                            <input type="text" id="tournament-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label id="tournament-type-label">Type</label>
+                            <select id="tournament-type" required>
+                                <option value="Solo">Solo</option>
+                                <option value="Duo">Duo</option>
+                                <option value="Squad">Squad</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="entry-fee-label">Entry Fee (₹)</label>
+                            <input type="number" id="entry-fee" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label id="prize-pool-label">Prize Pool (₹)</label>
+                            <input type="number" id="prize-pool" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="max-players-label">Max Players</label>
+                            <input type="number" id="max-players" min="2" required>
+                        </div>
+                        <div class="form-group">
+                            <label id="start-time-label">Start Time</label>
+                            <input type="datetime-local" id="start-time" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label id="room-code-label">Room Code</label>
+                            <input type="text" id="room-code" placeholder="Optional">
+                        </div>
+                        <div class="form-group">
+                            <label id="room-password-label">Room Password</label>
+                            <input type="text" id="room-password" placeholder="Optional">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="hideModal('create-tournament-modal')">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Create Tournament
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="../firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
