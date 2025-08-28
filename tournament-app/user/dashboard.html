@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tournament App</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Maintenance Overlay -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+        <div class="maintenance-content">
+            <i class="fas fa-tools"></i>
+            <h2>App Under Maintenance</h2>
+            <p>We're currently updating our system. Please check back later.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-gamepad"></i>
+                <span id="app-name">Tournament App</span>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="#home" class="nav-link active" data-section="home">
+                    <i class="fas fa-home"></i>
+                    <span id="nav-home">Home</span>
+                </a>
+                <a href="#my-contests" class="nav-link" data-section="my-contests">
+                    <i class="fas fa-trophy"></i>
+                    <span id="nav-my-contests">My Contests</span>
+                </a>
+                <a href="#wallet" class="nav-link" data-section="wallet">
+                    <i class="fas fa-wallet"></i>
+                    <span id="nav-wallet">Wallet</span>
+                </a>
+                <a href="#profile" class="nav-link" data-section="profile">
+                    <i class="fas fa-user"></i>
+                    <span id="nav-profile">Profile</span>
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                <div class="language-selector">
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="np">नेपाली</option>
+                    </select>
+                </div>
+                <button id="logout-btn" class="btn btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span id="logout-text">Logout</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Section -->
+            <section id="home-section" class="content-section active">
+                <div class="dashboard-header">
+                    <h1 id="welcome-text">Welcome back, <span id="user-name">User</span>!</h1>
+                    <p id="dashboard-subtitle">Ready to dominate today's tournaments?</p>
+                </div>
+
+                <!-- Wallet Summary -->
+                <div class="wallet-summary">
+                    <div class="wallet-card">
+                        <div class="wallet-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="wallet-info">
+                            <h3 id="deposit-label">Deposit</h3>
+                            <p class="wallet-amount" id="deposit-amount">₹0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="wallet-card">
+                        <div class="wallet-icon winning">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="wallet-info">
+                            <h3 id="winning-label">Winning</h3>
+                            <p class="wallet-amount" id="winning-amount">₹0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="wallet-card">
+                        <div class="wallet-icon bonus">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div class="wallet-info">
+                            <h3 id="bonus-label">Bonus</h3>
+                            <p class="wallet-amount" id="bonus-amount">₹0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tournament Filters -->
+                <div class="tournament-filters">
+                    <button class="filter-btn active" data-filter="all" id="filter-all">All</button>
+                    <button class="filter-btn" data-filter="solo" id="filter-solo">Solo</button>
+                    <button class="filter-btn" data-filter="duo" id="filter-duo">Duo</button>
+                    <button class="filter-btn" data-filter="squad" id="filter-squad">Squad</button>
+                    <button class="filter-btn" data-filter="my-created" id="filter-my-created">My Created</button>
+                </div>
+
+                <!-- Tournaments Grid -->
+                <div class="tournaments-container">
+                    <div id="tournaments-grid" class="tournaments-grid">
+                        <!-- Tournaments will be loaded here -->
+                    </div>
+                    
+                    <div id="no-tournaments" class="no-tournaments hidden">
+                        <i class="fas fa-calendar-times"></i>
+                        <h3 id="no-tournaments-title">No Tournaments Available</h3>
+                        <p id="no-tournaments-text">Check back later for new tournaments!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Contests Section -->
+            <section id="my-contests-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="my-contests-title">My Contests</h2>
+                    <p id="my-contests-subtitle">Track your tournament progress</p>
+                </div>
+
+                <div class="contests-container">
+                    <div id="my-contests-list" class="contests-list">
+                        <!-- User's contests will be loaded here -->
+                    </div>
+                    
+                    <div id="no-contests" class="no-contests hidden">
+                        <i class="fas fa-trophy"></i>
+                        <h3 id="no-contests-title">No Contests Joined</h3>
+                        <p id="no-contests-text">Join tournaments to see them here!</p>
+                        <button class="btn btn-primary" onclick="showSection('home')">
+                            <i class="fas fa-search"></i>
+                            Browse Tournaments
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wallet Section -->
+            <section id="wallet-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="wallet-title">Wallet</h2>
+                    <p id="wallet-subtitle">Manage your funds</p>
+                </div>
+
+                <div class="wallet-container">
+                    <!-- Wallet Balance -->
+                    <div class="wallet-balance">
+                        <div class="balance-card">
+                            <h3 id="total-balance-label">Total Balance</h3>
+                            <p class="total-amount" id="total-balance">₹0</p>
+                        </div>
+                    </div>
+
+                    <!-- Transaction History -->
+                    <div class="transaction-history">
+                        <h3 id="transaction-history-title">Transaction History</h3>
+                        <div id="transactions-list" class="transactions-list">
+                            <!-- Transactions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile-section" class="content-section">
+                <div class="section-header">
+                    <h2 id="profile-title">Profile</h2>
+                    <p id="profile-subtitle">Manage your account</p>
+                </div>
+
+                <div class="profile-container">
+                    <!-- User Info -->
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="profile-details">
+                            <h3 id="profile-name">User Name</h3>
+                            <p id="profile-email">user@example.com</p>
+                            <p id="profile-joined">Joined: <span id="join-date">2024</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Referral Section -->
+                    <div class="referral-section">
+                        <h3 id="referral-title">Refer & Earn</h3>
+                        <div class="referral-code">
+                            <label id="referral-code-label">Your Referral Code:</label>
+                            <div class="code-display">
+                                <input type="text" id="referral-code-display" readonly>
+                                <button id="copy-referral" class="btn btn-secondary">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p id="referral-info">Share this code with friends and earn bonuses!</p>
+                    </div>
+
+                    <!-- Support Links -->
+                    <div class="support-section">
+                        <h3 id="support-title">Support</h3>
+                        <div class="support-links">
+                            <a href="#" class="support-link" id="whatsapp-support">
+                                <i class="fab fa-whatsapp"></i>
+                                WhatsApp Support
+                            </a>
+                            <a href="#" class="support-link" id="facebook-support">
+                                <i class="fab fa-facebook"></i>
+                                Facebook Page
+                            </a>
+                            <a href="#" class="support-link" id="youtube-support">
+                                <i class="fab fa-youtube"></i>
+                                YouTube Channel
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Refund Policy -->
+                    <div class="refund-section">
+                        <h3 id="refund-title">Refund Policy</h3>
+                        <div id="refund-content" class="refund-content">
+                            <!-- Refund policy will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Tournament Details Modal -->
+    <div id="tournament-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Tournament Details</h2>
+                <button class="modal-close" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Tournament details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Tournament Modal -->
+    <div id="join-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="join-modal-title">Join Tournament</h2>
+                <button class="modal-close" id="close-join-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="join-confirmation">
+                    <p id="join-confirmation-text">Are you sure you want to join this tournament?</p>
+                    <div class="join-details" id="join-details">
+                        <!-- Join details will be shown here -->
+                    </div>
+                    <div class="join-actions">
+                        <button id="confirm-join" class="btn btn-primary">
+                            <i class="fas fa-check"></i>
+                            Confirm Join
+                        </button>
+                        <button id="cancel-join" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="../firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
